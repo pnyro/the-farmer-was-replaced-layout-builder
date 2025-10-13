@@ -1,0 +1,137 @@
+.farm-grid-container {
+  perspective: 1000px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: calc(100vh - 200px);
+  min-height: 400px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+}
+
+.farm-grid-container.panning {
+  cursor: grabbing !important;
+}
+
+.farm-grid {
+  display: grid;
+  gap: 4px;
+  transform: rotateX(55deg) rotateZ(-45deg);
+  transform-style: preserve-3d;
+  user-select: none;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 1rem;
+  border-radius: 8px;
+  transition: transform 0.1s ease-out;
+  transform-origin: center center;
+}
+
+/* Zoom Controls */
+.zoom-controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  padding: 8px 12px;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+}
+
+.zoom-button {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px);
+  color: #333;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.zoom-button:hover {
+  background: rgba(255, 255, 255, 0.8);
+  transform: scale(1.1);
+}
+
+.zoom-button:active {
+  transform: scale(0.95);
+}
+
+.zoom-button.reset {
+  font-size: 20px;
+}
+
+.zoom-level {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  min-width: 45px;
+  text-align: center;
+  background: rgba(0, 0, 0, 0.1);
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+/* Pan Hint */
+.pan-hint {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(0, 0, 0, 0.2);
+  padding: 6px 12px;
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.farm-grid-container:hover .pan-hint {
+  opacity: 1;
+}
+
+@media (max-width: 768px) {
+  .farm-grid-container {
+    height: calc(100vh - 150px);
+    padding: 1rem;
+  }
+
+  .zoom-controls {
+    bottom: 10px;
+    right: 10px;
+    padding: 6px 8px;
+    gap: 6px;
+  }
+
+  .zoom-button {
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
+  }
+
+  .pan-hint {
+    font-size: 10px;
+    padding: 4px 8px;
+  }
+}

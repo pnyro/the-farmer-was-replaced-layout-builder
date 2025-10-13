@@ -1,0 +1,368 @@
+.dock {
+  position: fixed;
+  left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 20px;
+  padding: 0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  z-index: 1000;
+  width: 92px;
+  height: 90vh;
+  max-height: 90vh;
+  overflow: hidden;
+}
+
+.dock-scrollable {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: visible;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 16px;
+}
+
+.dock-scrollable::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dock-scrollable::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dock-scrollable::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.dock-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.section-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dock-tools {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.dock-divider {
+  height: 1px;
+  width: calc(100% - 32px);
+  background: rgba(255, 255, 255, 0.3);
+  margin: 4px 16px;
+  align-self: center;
+}
+
+.dock-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 0 16px;
+}
+
+.dock-controls:last-child {
+  margin-bottom: 0;
+  padding-bottom: 12px;
+}
+
+/* Mode Toggle */
+.mode-toggle-container {
+  padding: 12px 16px 0 16px;
+}
+
+.mode-toggle {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+
+.mode-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  text-align: center;
+}
+
+.mode-button-group {
+  display: flex;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 3px;
+  border-radius: 10px;
+}
+
+.mode-button {
+  padding: 6px 8px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  backdrop-filter: blur(10px);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 28px;
+  text-align: center;
+  flex: 1;
+}
+
+.mode-button:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.mode-button.active {
+  background: rgba(102, 126, 234, 0.9);
+  color: white;
+  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
+}
+
+.mode-button:active {
+  transform: scale(0.95);
+}
+
+.grid-size-control {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.grid-size-control label {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.grid-size-control input {
+  padding: 6px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px);
+  font-size: 14px;
+  text-align: center;
+  width: 60px;
+  transition: all 0.2s;
+  color: #333;
+  font-weight: 600;
+}
+
+.grid-size-control input:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.5);
+}
+
+.size-display {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.8);
+  text-align: center;
+  font-weight: 500;
+}
+
+.export-button {
+  padding: 10px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px);
+  color: #333;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 60px;
+}
+
+.export-button:hover {
+  background: rgba(255, 255, 255, 0.7);
+  transform: scale(1.05);
+}
+
+.export-button:active {
+  transform: scale(0.98);
+}
+
+.reset-button {
+  padding: 10px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(220, 53, 69, 0.8);
+  backdrop-filter: blur(10px);
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 60px;
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+.reset-button:hover {
+  background: rgba(220, 53, 69, 1);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+}
+
+.reset-button:active {
+  transform: scale(0.98);
+}
+
+/* Export Modal */
+.export-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  animation: fadeIn 0.2s;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.export-modal-content {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 600px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.export-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.export-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #999;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-button:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #333;
+}
+
+.export-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-family: "Courier New", monospace;
+  font-size: 12px;
+  resize: vertical;
+  background: #f8f8f8;
+  box-sizing: border-box;
+  margin-bottom: 12px;
+}
+
+.export-textarea:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.copy-button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.copy-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+}
+
+.copy-button:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+  .dock {
+    left: 10px;
+    transform: translateY(-50%) scale(0.9);
+  }
+}

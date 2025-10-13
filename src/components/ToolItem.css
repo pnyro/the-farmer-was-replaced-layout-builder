@@ -1,0 +1,141 @@
+.tool-item {
+  width: 60px;
+  height: 60px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 6px;
+}
+
+.tool-item:hover {
+  transform: scale(1.2) translateY(-4px);
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.tool-item:active {
+  transform: scale(1.1) translateY(-2px);
+}
+
+.tool-item.selected {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.5),
+    0 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+.tool-item.selected:hover {
+  transform: scale(1.2) translateY(-4px);
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.6),
+    0 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+/* Icon styling */
+.tool-icon {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+/* Text label for items without icons */
+.tool-text {
+  font-weight: 600;
+  font-size: 10px;
+  line-height: 1.2;
+  text-align: center;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Info container at bottom */
+.tool-info {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  pointer-events: none;
+}
+
+.tool-shortcut {
+  font-size: 8px;
+  font-weight: 600;
+  font-family: monospace;
+  background: rgba(0, 0, 0, 0.3);
+  color: white;
+  padding: 1px 4px;
+  border-radius: 3px;
+  line-height: 1;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.tool-item.selected .tool-shortcut {
+  background: rgba(255, 255, 255, 0.3);
+  color: white;
+}
+
+/* Color indicators for different tools (only show for non-icon tools) */
+.tool-item.tool-soil:not(:has(.tool-icon))::before,
+.tool-item.tool-grass:not(:has(.tool-icon))::before,
+.tool-item.tool-water:not(:has(.tool-icon))::before,
+.tool-item.tool-eraser:not(:has(.tool-icon))::before,
+.tool-item.tool-wheat:not(:has(.tool-icon))::before,
+.tool-item.tool-hay:not(:has(.tool-icon))::before,
+.tool-item.tool-tree:not(:has(.tool-icon))::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.tool-item.tool-soil::before {
+  background: #784f36;
+}
+
+.tool-item.tool-grass::before {
+  background: #6a994e;
+}
+
+.tool-item.tool-water::before {
+  background: #3d8fc8;
+}
+
+.tool-item.tool-eraser::before {
+  background: #999;
+}
+
+.tool-item.tool-wheat::before {
+  background: #f4d03f;
+}
+
+.tool-item.tool-hay::before {
+  background: #d4af37;
+}
+
+.tool-item.tool-tree::before {
+  background: #2d5016;
+}
+
+.tool-item.selected::before {
+  background: white !important;
+}
