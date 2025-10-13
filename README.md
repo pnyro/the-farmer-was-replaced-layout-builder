@@ -13,6 +13,20 @@
 Use these scripts to be able to drop-in the grid config.
 
 ```python
+# mod_globals
+
+def index_to_coords(index):
+	grid_size = get_world_size()
+	x = index % grid_size
+	y = index // grid_size
+	return (x, y)
+
+def coords_to_index(x, y):
+	grid_size = get_world_size() ** 2
+	return y * grid_size + x
+```
+
+```python
 # mod_farm
 
 def do_plant(crop_type):
@@ -144,18 +158,20 @@ def move_to_index(index):
 Then call it like this:
 
 ```python
-# define the grid here or in another module
+import mod_farm
+
+# define the grid here or import from another module
 grid = [
   {
 	"ground": Grounds.Soil,
 	"entity": Entities.Carrot
   },
   {
-	"ground": Grounds.Soil,
-	"entity": Entities.Carrot
+	"ground": Grounds.Grassland,
+	"entity": Entities.Grass
   }
 ]
 
 # pass the grid definition to do_farm
-do_farm(grid) # farms once
+mod_farm.do_farm(grid) # farms once
 ```
