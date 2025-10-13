@@ -29,6 +29,8 @@ def coords_to_index(x, y):
 ```python
 # mod_farm
 
+import mod_move
+
 def do_plant(crop_type):
 	soil_types = [Entities.Bush, Entities.Carrot, Entities.Pumpkin]
 	ground_type = get_ground_type()
@@ -77,6 +79,8 @@ def do_farm(grid):
 
 ```python
 # mod_move
+
+import mod_globals
 
 def move_to_pos(target_x, target_y):
 	cur_x = get_pos_x()
