@@ -30,16 +30,14 @@ const remapGrid = (oldGridData, oldRows, oldCols, newRows, newCols) => {
   const minCols = Math.min(oldCols, newCols);
 
   // Copy existing cells to their exact same positions in the new grid
+  // Optimize by reusing old cell objects when possible (no deep copy needed)
   for (let row = 0; row < minRows; row++) {
     for (let col = 0; col < minCols; col++) {
       const oldIndex = row * oldCols + col;
       const newIndex = row * newCols + col;
 
-      // Copy the cell data preserving ground type and crop
-      newGrid[newIndex] = {
-        ground: oldGridData[oldIndex].ground,
-        crop: oldGridData[oldIndex].crop,
-      };
+      // Reuse existing cell object instead of creating new one
+      newGrid[newIndex] = oldGridData[oldIndex];
     }
   }
 

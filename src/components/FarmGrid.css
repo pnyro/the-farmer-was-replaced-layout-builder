@@ -18,10 +18,7 @@
   cursor: grabbing !important;
 }
 
-.farm-grid {
-  display: grid;
-  gap: 4px;
-  transform: rotateX(55deg) rotateZ(-45deg);
+.farm-grid-canvas-wrapper {
   transform-style: preserve-3d;
   user-select: none;
   background: rgba(255, 255, 255, 0.1);
@@ -29,6 +26,49 @@
   border-radius: 8px;
   transition: transform 0.1s ease-out;
   transform-origin: center center;
+}
+
+.farm-grid-canvas {
+  display: block;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+
+/* View Mode Toggle */
+.view-mode-toggle {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 10;
+}
+
+.view-mode-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+}
+
+.view-mode-button:hover {
+  background: rgba(255, 255, 255, 0.4);
+  transform: scale(1.05);
+}
+
+.view-mode-button:active {
+  transform: scale(0.98);
+}
+
+.view-mode-button.active {
+  background: rgba(255, 255, 255, 0.5);
 }
 
 /* Zoom Controls */

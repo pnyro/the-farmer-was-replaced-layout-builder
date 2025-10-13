@@ -71,8 +71,8 @@ function Dock({
 
     let newSize = parsed;
 
-    // Clamp between 1 and 128
-    newSize = Math.max(1, Math.min(128, newSize));
+    // Clamp between 1 and 512
+    newSize = Math.max(1, Math.min(512, newSize));
 
     // Ensure even numbers except for 1
     if (newSize > 1 && newSize % 2 !== 0) {
@@ -128,11 +128,11 @@ function Dock({
     let newSize;
     if (gridSize === 1) {
       newSize = 2; // Special case: 1 -> 2
-    } else if (gridSize >= 128) {
-      newSize = 128; // Already at max
+    } else if (gridSize >= 512) {
+      newSize = 512; // Already at max
     } else {
       newSize = gridSize + 2; // Increment by 2
-      newSize = Math.min(128, newSize); // Cap at 128
+      newSize = Math.min(512, newSize); // Cap at 512
     }
     setInputValue(newSize.toString());
     onGridSizeChange(newSize);
@@ -288,7 +288,7 @@ function Dock({
               <input
                 type="number"
                 min="1"
-                max="128"
+                max="512"
                 value={inputValue}
                 onChange={handleSizeChange}
                 onBlur={handleSizeBlur}
