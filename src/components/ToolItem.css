@@ -49,6 +49,13 @@
   flex-shrink: 0;
 }
 
+.tool-color-swatch {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
 /* Text label for items without icons */
 .tool-text {
   font-weight: 600;

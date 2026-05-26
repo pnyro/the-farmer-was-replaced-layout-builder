@@ -3,10 +3,16 @@ import { createPortal } from "react-dom";
 import ToolItem from "./ToolItem";
 import "./Dock.css";
 
+const MAX_GRID_SIZE = 64;
+
 // Import crop icons
 import carrotIcon from "../assets/carrot.svg";
 import pumpkinIcon from "../assets/pumpkin.svg";
 import appleIcon from "../assets/apple.svg";
+import wheatIcon from "../assets/wheat.png";
+import hayIcon from "../assets/hay-roll.png";
+import treeIcon from "../assets/tree.png";
+import eraserIcon from "../assets/eraser.png";
 
 function Dock({
   selectedTool,
@@ -29,14 +35,14 @@ function Dock({
 
   // Ground types
   const groundTools = [
-    { name: "soil", label: "Soil", shortcut: "S", icon: null },
-    { name: "grass", label: "Grass", shortcut: "G", icon: null },
+    { name: "soil", label: "Soil", shortcut: "S", icon: null, color: "#784f36" },
+    { name: "grass", label: "Grass", shortcut: "G", icon: null, color: "#6a994e" },
     { name: "water", label: "Water", shortcut: "W", icon: null },
   ];
 
   // Tools
   const utilityTools = [
-    { name: "eraser", label: "Eraser", shortcut: "E", icon: null },
+    { name: "eraser", label: "Eraser", shortcut: "E", icon: eraserIcon },
   ];
 
   // Crop types
@@ -44,9 +50,9 @@ function Dock({
     { name: "carrot", label: "Carrot", shortcut: "C", icon: carrotIcon },
     { name: "pumpkin", label: "Pumpkin", shortcut: "P", icon: pumpkinIcon },
     { name: "apple", label: "Apple", shortcut: "A", icon: appleIcon },
-    { name: "wheat", label: "Wheat", shortcut: "U", icon: null },
-    { name: "hay", label: "Hay", shortcut: "H", icon: null },
-    { name: "tree", label: "Tree", shortcut: "T", icon: null },
+    { name: "wheat", label: "Wheat", shortcut: "U", icon: wheatIcon },
+    { name: "hay", label: "Hay", shortcut: "H", icon: hayIcon },
+    { name: "tree", label: "Tree", shortcut: "T", icon: treeIcon },
   ];
 
   // Filter ground tools based on mode
@@ -71,8 +77,7 @@ function Dock({
 
     let newSize = parsed;
 
-    // Clamp between 1 and 512
-    newSize = Math.max(1, Math.min(512, newSize));
+    newSize = Math.max(1, Math.min(MAX_GRID_SIZE, newSize));
 
     // Ensure even numbers except for 1
     if (newSize > 1 && newSize % 2 !== 0) {
@@ -128,11 +133,10 @@ function Dock({
     let newSize;
     if (gridSize === 1) {
       newSize = 2; // Special case: 1 -> 2
-    } else if (gridSize >= 512) {
-      newSize = 512; // Already at max
+    } else if (gridSize >= MAX_GRID_SIZE) {
+      newSize = MAX_GRID_SIZE;
     } else {
-      newSize = gridSize + 2; // Increment by 2
-      newSize = Math.min(512, newSize); // Cap at 512
+      newSize = Math.min(MAX_GRID_SIZE, gridSize + 2);
     }
     setInputValue(newSize.toString());
     onGridSizeChange(newSize);
@@ -252,6 +256,7 @@ function Dock({
                   label={tool.label}
                   shortcut={tool.shortcut}
                   icon={tool.icon}
+                  color={tool.color}
                   isSelected={selectedTool === tool.name}
                   onSelect={() => onToolSelect(tool.name)}
                 />
@@ -288,7 +293,7 @@ function Dock({
               <input
                 type="number"
                 min="1"
-                max="512"
+                max={MAX_GRID_SIZE}
                 value={inputValue}
                 onChange={handleSizeChange}
                 onBlur={handleSizeBlur}

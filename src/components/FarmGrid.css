@@ -7,11 +7,8 @@
   position: relative;
   overflow: hidden;
   width: 100%;
-  height: calc(100vh - 200px);
-  min-height: 400px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 20px;
-  backdrop-filter: blur(10px);
+  flex: 1;
+  min-height: 0;
 }
 
 .farm-grid-container.panning {
@@ -21,9 +18,6 @@
 .farm-grid-canvas-wrapper {
   transform-style: preserve-3d;
   user-select: none;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 1rem;
-  border-radius: 8px;
   transition: transform 0.1s ease-out;
   transform-origin: center center;
 }
@@ -153,7 +147,7 @@
 
 @media (max-width: 768px) {
   .farm-grid-container {
-    height: calc(100vh - 150px);
+    flex: 1;
     padding: 1rem;
   }
 

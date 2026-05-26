@@ -5,6 +5,9 @@ import "./FarmGrid.css";
 import carrotIcon from "../assets/carrot.svg";
 import pumpkinIcon from "../assets/pumpkin.svg";
 import appleIcon from "../assets/apple.svg";
+import wheatIcon from "../assets/wheat.png";
+import hayIcon from "../assets/hay-roll.png";
+import treeIcon from "../assets/tree.png";
 
 const CELL_SIZE = 60;
 const CELL_GAP = 4;
@@ -42,6 +45,9 @@ function FarmGrid({
       carrot: carrotIcon,
       pumpkin: pumpkinIcon,
       apple: appleIcon,
+      wheat: wheatIcon,
+      hay: hayIcon,
+      tree: treeIcon,
     };
 
     let loadedCount = 0;
@@ -86,11 +92,14 @@ function FarmGrid({
     if (!canvas) return;
 
     const ctx = canvas.getContext("2d");
-    const dpr = window.devicePixelRatio || 1;
-
-    // Set canvas size
     const gridWidth = gridSize.cols * CELL_TOTAL;
     const gridHeight = gridSize.rows * CELL_TOTAL;
+
+    // Chrome hard-limits canvas dimensions to 16384px.
+    // Clamp DPR so the backing store never exceeds that, with a floor of 1.
+    const MAX_CANVAS_PX = 16384;
+    const maxDpr = Math.max(1, Math.floor(MAX_CANVAS_PX / Math.max(gridWidth, gridHeight)));
+    const dpr = Math.min(window.devicePixelRatio || 1, maxDpr);
 
     canvas.width = gridWidth * dpr;
     canvas.height = gridHeight * dpr;
@@ -117,39 +126,19 @@ function FarmGrid({
         const isHovered = index === hoveredCell;
 
         // Lift effect for hover
-        const liftOffset = isHovered ? -2 : 0;
-        const adjustedX = x + liftOffset;
-        const adjustedY = y + liftOffset;
-
-        // Enhanced shadow for hover
-        ctx.shadowColor = isHovered
-          ? "rgba(0, 0, 0, 0.5)"
-          : "rgba(0, 0, 0, 0.3)";
-        ctx.shadowBlur = isHovered ? 12 : 8;
-        ctx.shadowOffsetX = isHovered ? 4 : 3;
-        ctx.shadowOffsetY = isHovered ? 4 : 3;
-
         // Draw ground
         ctx.fillStyle = GROUND_COLORS[cell.ground] || GROUND_COLORS.grass;
-        ctx.fillRect(adjustedX, adjustedY, CELL_SIZE, CELL_SIZE);
-
-        // Reset shadow for border
-        ctx.shadowColor = "transparent";
-        ctx.shadowBlur = 0;
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 0;
+        ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
 
         // Draw border
-        ctx.strokeStyle = isHovered
-          ? "rgba(255, 255, 255, 0.8)"
-          : "rgba(0, 0, 0, 0.2)";
-        ctx.lineWidth = isHovered ? 3 : 1;
-        ctx.strokeRect(adjustedX, adjustedY, CELL_SIZE, CELL_SIZE);
+        ctx.strokeStyle = isHovered ? "rgba(255, 255, 255, 0.8)" : "rgba(0, 0, 0, 0.2)";
+        ctx.lineWidth = isHovered ? 2 : 1;
+        ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
 
         // Hover overlay
         if (isHovered) {
           ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
-          ctx.fillRect(adjustedX, adjustedY, CELL_SIZE, CELL_SIZE);
+          ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
         }
 
         // Draw crop
@@ -157,44 +146,15 @@ function FarmGrid({
           const img = cropImages[cell.crop];
           if (img) {
             const iconSize = CELL_SIZE * 0.8;
-            const iconX = adjustedX + (CELL_SIZE - iconSize) / 2;
-            const iconY = adjustedY + (CELL_SIZE - iconSize) / 2;
-
-            // Add drop shadow for icon
-            ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
-            ctx.shadowBlur = 4;
-            ctx.shadowOffsetX = 2;
-            ctx.shadowOffsetY = 2;
-
+            const iconX = x + (CELL_SIZE - iconSize) / 2;
+            const iconY = y + (CELL_SIZE - iconSize) / 2;
             ctx.drawImage(img, iconX, iconY, iconSize, iconSize);
-
-            // Reset shadow
-            ctx.shadowColor = "transparent";
-            ctx.shadowBlur = 0;
-            ctx.shadowOffsetX = 0;
-            ctx.shadowOffsetY = 0;
           } else {
-            // Fallback text rendering
-            ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
-            ctx.shadowBlur = 4;
-            ctx.shadowOffsetX = 2;
-            ctx.shadowOffsetY = 2;
-
             ctx.fillStyle = "white";
             ctx.font = "bold 32px sans-serif";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            ctx.fillText(
-              cell.crop.charAt(0).toUpperCase(),
-              adjustedX + CELL_SIZE / 2,
-              adjustedY + CELL_SIZE / 2
-            );
-
-            // Reset shadow
-            ctx.shadowColor = "transparent";
-            ctx.shadowBlur = 0;
-            ctx.shadowOffsetX = 0;
-            ctx.shadowOffsetY = 0;
+            ctx.fillText(cell.crop.charAt(0).toUpperCase(), x + CELL_SIZE / 2, y + CELL_SIZE / 2);
           }
         }
       }

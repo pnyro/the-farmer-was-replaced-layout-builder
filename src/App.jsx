@@ -173,14 +173,6 @@ function App() {
       />
 
       <div className="main-content">
-        <header className="app-header">
-          <h1>The Farmer Was Replaced - Farm Layout Planner</h1>
-          <p>
-            Click and drag to paint ground types and place crops. Use keyboard
-            shortcuts for quick tool selection.
-          </p>
-        </header>
-
         <FarmGrid
           gridData={gridData}
           gridSize={gridSize}
