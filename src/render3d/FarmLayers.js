@@ -191,6 +191,20 @@ export class FarmLayers {
       }
       for (const m of analysis.merges) frame(m.x, m.y, m.n, m.n, OVERLAY.merge, 0.08, 0.06);
     }
+    // Outline of the shape preview (perimeter edges only), like the 2D view.
+    if (st.preview?.indices) {
+      const set = st.preview.indices;
+      const t = 0.06;
+      for (const i of set) {
+        const x = i % n;
+        const y = (i - x) / n;
+        const [cx, , cz] = tileToWorld(x, y, n);
+        if (x === 0 || !set.has(i - 1)) bar(cx - 0.5 + t / 2, cz, t, 1, OVERLAY.preview);
+        if (x === n - 1 || !set.has(i + 1)) bar(cx + 0.5 - t / 2, cz, t, 1, OVERLAY.preview);
+        if (!set.has(i + n)) bar(cx, cz - 0.5 + t / 2, 1, t, OVERLAY.preview);
+        if (!set.has(i - n)) bar(cx, cz + 0.5 - t / 2, 1, t, OVERLAY.preview);
+      }
+    }
     if (st.hover && !st.stroke) frame(st.hover[0], st.hover[1], 1, 1, OVERLAY.hover, 0.06, 0);
     this.bars.count = b;
     this.bars.instanceMatrix.needsUpdate = true;

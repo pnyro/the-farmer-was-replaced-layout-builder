@@ -168,8 +168,13 @@ function PointerPlane({ size, spaceDown }) {
   );
 }
 
-function Label({ text, position, height = 0.0125, style, center = [0.5, 0.5] }) {
+// Sprites with sizeAttenuation off are sized relative to the viewport height; convert to pixels.
+const LABEL_PX_FACTOR = 1.37;
+
+function Label({ text, position, px = 14, style, center = [0.5, 0.5] }) {
+  const viewportH = useThree((s) => s.size.height);
   const { material, aspect } = labelMaterial(text, style);
+  const height = px / (Math.max(1, viewportH) * LABEL_PX_FACTOR);
   return (
     <sprite
       material={material}
@@ -209,7 +214,7 @@ function MergeLabels({ size }) {
         key={`${m.x},${m.y},${m.n}`}
         text={`${m.n}×${m.n}`}
         position={[wx + 0.12, 0.12, wz + 0.12]}
-        height={0.0115}
+        px={14}
         center={[0, 1]}
         style={{ color: "#3a2400", background: "#ff9a1f", weight: 700 }}
       />

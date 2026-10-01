@@ -687,9 +687,19 @@ textarea.code-window {
 @media (max-width: 1180px) {
   .body {
     grid-template-columns: 232px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) minmax(0, 38%);
+    grid-template-areas:
+      "palette workspace"
+      "inspector workspace";
+  }
+  .palette {
+    grid-area: palette;
   }
   .inspector {
-    display: none;
+    grid-area: inspector;
+  }
+  .workspace {
+    grid-area: workspace;
   }
 }
 
@@ -720,7 +730,8 @@ textarea.code-window {
     height: 62vh;
     min-height: 320px;
   }
-  .palette {
+  .palette,
+  .inspector {
     overflow: visible;
   }
   .brush-grid {

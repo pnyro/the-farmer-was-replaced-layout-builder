@@ -75,6 +75,12 @@ export default function App() {
     if (import.meta.env.DEV) window.__editor = editor; // handy for debugging and screenshot scripts
   }, [editor]);
 
+  // A layout opened from a link is now in the editor (and autosaved): drop the hash so a reload
+  // doesn't overwrite later edits with the original link.
+  useEffect(() => {
+    if (source === "link") history.replaceState(null, "", location.pathname + location.search);
+  }, [source]);
+
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(""), 2200);
@@ -100,6 +106,7 @@ export default function App() {
       if (layout) {
         editor.load(layout);
         setToast("Loaded layout from link");
+        history.replaceState(null, "", location.pathname + location.search);
       }
     };
     window.addEventListener("hashchange", onHash);
@@ -129,12 +136,11 @@ export default function App() {
 
   const share = async () => {
     const url = shareUrl(editor.getState());
-    history.replaceState(null, "", url);
     try {
       await navigator.clipboard.writeText(url);
       setToast("Share link copied to clipboard");
     } catch {
-      setToast("Share link is in the address bar");
+      window.prompt("Copy this link:", url);
     }
   };
 
