@@ -22,12 +22,12 @@ export const exportPython = ({ size, cells }, { name = "grid" } = {}) => {
   const lines = [];
   lines.push(`# Farm layout ${size}x${size}, made with the TFWR Layout Builder.`);
   lines.push(`# ${name}[y * ${name}_size + x] is the tile at (x, y); (0, 0) is the south-west corner.`);
+  lines.push(`# Rows go south to north, ${size} tiles per row.`);
   lines.push(`${name}_size = ${size}`);
   lines.push(`${name} = [`);
-  for (let y = 0; y < size; y++) {
-    lines.push(`\t# y = ${y}`);
-    for (let x = 0; x < size; x++) lines.push(`\t${pyCell(cells[y * size + x])},`);
-  }
+  // Kept deliberately plain (one tile per line, no comments or trailing comma inside the list)
+  // so the game's Python dialect parses it.
+  cells.forEach((c, i) => lines.push(`\t${pyCell(c)}${i < cells.length - 1 ? "," : ""}`));
   lines.push("]");
   return lines.join("\n") + "\n";
 };

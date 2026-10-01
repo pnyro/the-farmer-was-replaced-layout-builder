@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Captures README screenshots of the demo farm in both views.
 //
-//   pnpm screenshot                 # writes public/screenshot-2d.png and public/screenshot-3d.png
+//   pnpm screenshot                 # writes public/screenshot.png (3D) and public/screenshot-2d.png
 //   node scripts/screenshot.mjs --size 32 --out /tmp/shots --width 1600 --height 1000
 //
 // Starts a throwaway Vite dev server and drives headless Chrome (set CHROME_PATH if needed).
@@ -62,7 +62,9 @@ try {
       await page.evaluate((t) => window.__editor.pointerMove(t), [x, y]);
     }
     await new Promise((r) => setTimeout(r, view === "3d" ? 6000 : 2600));
-    const file = join(outDir, `${args.prefix}-${view}.png`);
+    // README uses public/screenshot.png (3D) and public/screenshot-2d.png.
+    const name = args.prefix === "screenshot" && view === "3d" ? "screenshot.png" : `${args.prefix}-${view}.png`;
+    const file = join(outDir, name);
     await page.screenshot({ path: file });
     console.log("wrote", file);
   }

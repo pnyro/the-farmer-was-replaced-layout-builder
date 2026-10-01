@@ -1,7 +1,7 @@
 // 3D renderer (react-three-fiber). Same editor core as the 2D view: this component only renders
 // the state and turns pointer rays into tile coordinates.
 
-import { Html, OrbitControls } from "@react-three/drei";
+import { OrbitControls } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Bloom, EffectComposer, ToneMapping } from "@react-three/postprocessing";
 import { useEffect, useMemo, useRef } from "react";
@@ -9,6 +9,7 @@ import * as THREE from "three";
 import { useEditor, useEditorState } from "../core/useEditor.js";
 import { FarmLayers, tileToWorld, worldToTile } from "./FarmLayers.js";
 import { DRONE_MOTORS, buildSlab, createMaterial, getGeometry } from "./models.js";
+import { labelMaterial } from "./labels.js";
 import { BACKGROUND } from "./palette.js";
 
 // postprocessing's ToneMappingMode.ACES_FILMIC (not imported directly to avoid a second dependency).
@@ -167,32 +168,34 @@ function PointerPlane({ size, spaceDown }) {
   );
 }
 
+function Label({ text, position, height = 0.0125, style, center = [0.5, 0.5] }) {
+  const { material, aspect } = labelMaterial(text, style);
+  return (
+    <sprite
+      material={material}
+      position={position}
+      scale={[height * aspect, height, 1]}
+      center={center}
+      renderOrder={5}
+      raycast={() => null}
+    />
+  );
+}
+
 function Labels({ size }) {
-  const every = size > 20 ? 4 : size > 12 ? 2 : 1;
-  const xs = [];
-  const ys = [];
-  for (let i = 0; i < size; i++) {
-    if (i % every === 0 || i === size - 1) {
-      xs.push(i);
-      ys.push(i);
-    }
-  }
+  const every = size > 20 ? 2 : 1;
+  const ticks = [];
+  for (let i = 0; i < size; i++) if (i % every === 0 || i === size - 1) ticks.push(i);
   const half = size / 2;
   return (
     <group>
-      {xs.map((x) => (
-        <Html key={`x${x}`} position={[tileToWorld(x, 0, size)[0], -0.5, half + 0.7]} center className="coord-label">
-          {x}
-        </Html>
+      {ticks.map((x) => (
+        <Label key={`x${x}`} text={String(x)} position={[tileToWorld(x, 0, size)[0], -0.45, half + 0.65]} />
       ))}
-      {ys.map((y) => (
-        <Html key={`y${y}`} position={[-half - 0.7, -0.5, tileToWorld(0, y, size)[2]]} center className="coord-label">
-          {y}
-        </Html>
+      {ticks.map((y) => (
+        <Label key={`y${y}`} text={String(y)} position={[-half - 0.65, -0.45, tileToWorld(0, y, size)[2]]} />
       ))}
-      <Html position={[0, 0.2, -half - 0.9]} center className="coord-label coord-north">
-        N ↑
-      </Html>
+      <Label text="N ↑" position={[0, 0.25, -half - 0.8]} />
     </group>
   );
 }
@@ -202,9 +205,14 @@ function MergeLabels({ size }) {
   return merges.map((m) => {
     const [wx, , wz] = tileToWorld(m.x - 0.5, m.y + m.n - 0.5, size);
     return (
-      <Html key={`${m.x},${m.y},${m.n}`} position={[wx + 0.1, 0.05, wz - 0.1]} className="merge-label">
-        {m.n}×{m.n}
-      </Html>
+      <Label
+        key={`${m.x},${m.y},${m.n}`}
+        text={`${m.n}×${m.n}`}
+        position={[wx + 0.12, 0.12, wz + 0.12]}
+        height={0.0115}
+        center={[0, 1]}
+        style={{ color: "#3a2400", background: "#ff9a1f", weight: 700 }}
+      />
     );
   });
 }

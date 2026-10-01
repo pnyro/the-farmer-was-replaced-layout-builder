@@ -112,8 +112,6 @@ export default function FarmCanvas2D({ apiRef }) {
 
       // Earth slab: south face below the farm with a few rocks, like the 3D view.
       const pad = s * 0.06;
-      ctx.fillStyle = "rgba(20,30,40,0.18)";
-      ctx.fillRect(X(0) - pad + s * 0.12, Y(0) + s * 0.1, n * s + pad * 2, s * SLAB + s * 0.08);
       const grad = ctx.createLinearGradient(0, Y(0), 0, Y(0) + s * SLAB);
       grad.addColorStop(0, RAMP.brown[1]);
       grad.addColorStop(1, RAMP.brown[3]);
@@ -264,7 +262,7 @@ export default function FarmCanvas2D({ apiRef }) {
       }
 
       // The drone waits at (0,0), where the drone scripts start.
-      drawSprite("Drone", X(0.18), Y(0.2) - s * 0.15, 0.55, 0.95);
+      drawSprite("Drone", X(0.02), Y(0.02) - s * 0.08, Math.min(0.5, 26 / s + 0.18), 0.95);
     };
 
     const badge = (text, x, y, bg, fg) => {

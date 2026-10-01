@@ -47,7 +47,7 @@ export class FarmLayers {
     const quadGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
     this.quadMat = new THREE.MeshBasicMaterial({
       transparent: true,
-      opacity: 0.38,
+      opacity: 0.26,
       depthWrite: false,
       toneMapped: false,
       polygonOffset: true,
