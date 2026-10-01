@@ -171,6 +171,18 @@ describe("validation", () => {
       { x: 3, y: 0, n: 2 },
     ]);
   });
+  it("detects unsorted cacti", () => {
+    const K = (n) => C("Soil", "Cactus", { cactusSize: n });
+    const cells = new Array(9).fill(EMPTY_CELL);
+    cells[toIndex(0, 0, 3)] = K(1);
+    cells[toIndex(1, 0, 3)] = K(2);
+    cells[toIndex(0, 1, 3)] = K(3);
+    expect([...analyzeLayout(cells, 3).cactusSorted]).toEqual([1, 1, 1, 1, 1, 1, 1, 1, 1]);
+    cells[toIndex(1, 0, 3)] = K(0);
+    const flags = analyzeLayout(cells, 3).cactusSorted;
+    expect(flags[toIndex(0, 0, 3)]).toBe(0);
+    expect(flags[toIndex(1, 0, 3)]).toBe(0);
+  });
   it("does not merge single pumpkins", () => {
     const cells = new Array(9).fill(EMPTY_CELL);
     cells[0] = C("Soil", "Pumpkin");

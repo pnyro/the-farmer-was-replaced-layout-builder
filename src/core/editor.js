@@ -2,9 +2,9 @@
 // gesture/hover state. Renderers (2D canvas, 3D scene) only translate pointer events into tile
 // coordinates and call the interaction methods below, so every tool behaves identically in both.
 
-import { DEFAULT_SIZE, ENTITY_BY_NAME, PARAMS, clampParam } from "./entities.js";
+import { DEFAULT_SIZE, ENTITY_BY_NAME, PARAMS, clampParam, isEntity, isGround } from "./entities.js";
 import { cellsEqual, clampSize, createCells, inBounds, paintCells, resizeCells, toIndex } from "./grid.js";
-import { floodIndices, lineIndices, shapeIndices } from "./tools.js";
+import { TOOL_BY_ID, floodIndices, lineIndices, shapeIndices } from "./tools.js";
 import { analyzeLayout } from "./validation.js";
 
 export const HISTORY_LIMIT = 200;
@@ -17,6 +17,14 @@ export const brushFromId = (id, params) => {
   const paramKey = ENTITY_BY_NAME[name]?.param;
   return { kind: "entity", entity: name, params: paramKey ? { [paramKey]: params[paramKey] } : undefined };
 };
+
+export const isValidBrushId = (id) => {
+  if (id === "erase") return true;
+  const [kind, name] = String(id).split(":");
+  return (kind === "ground" && isGround(name)) || (kind === "entity" && isEntity(name));
+};
+
+export const isValidTool = (id) => Object.hasOwn(TOOL_BY_ID, id);
 
 export const brushIdForCell = (cell) => (cell.entity ? `entity:${cell.entity}` : `ground:${cell.ground}`);
 

@@ -77,11 +77,38 @@ export const treeNeighbourCounts = (cells, size) => {
 };
 
 /**
+ * Cactus sort state per tile (1 = sorted or not a cactus). A cactus is sorted when every
+ * neighbouring cactus to the North/East is >= its size and every one to the South/West is <=.
+ * Unsorted grown cacti turn brown in the game, and both views mirror that.
+ */
+export const cactusSortedFlags = (cells, size) => {
+  const out = new Uint8Array(size * size).fill(1);
+  const sz = (i) => cells[i].params?.cactusSize ?? 9;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const i = y * size + x;
+      if (cells[i].entity !== "Cactus") continue;
+      const v = sz(i);
+      const check = (nx, ny, wantGreater) => {
+        if (nx < 0 || ny < 0 || nx >= size || ny >= size) return true;
+        const j = ny * size + nx;
+        if (cells[j].entity !== "Cactus") return true;
+        return wantGreater ? sz(j) >= v : sz(j) <= v;
+      };
+      out[i] =
+        check(x, y + 1, true) && check(x + 1, y, true) && check(x, y - 1, false) && check(x - 1, y, false) ? 1 : 0;
+    }
+  }
+  return out;
+};
+
+/**
  * Full analysis. Returns
  *   issues: Array<{ index, type, message }>
  *   byIndex: Map<index, issue[]>
  *   merges: [{x, y, n}]
  *   mergeOf: Int32Array mapping tile index -> merge index (or -1)
+ *   cactusSorted: Uint8Array (0 = unsorted cactus)
  */
 export const analyzeLayout = (cells, size) => {
   const issues = [];
@@ -116,7 +143,7 @@ export const analyzeLayout = (cells, size) => {
       for (let x = m.x; x < m.x + m.n; x++) mergeOf[y * size + x] = k;
     }
   });
-  return { issues, byIndex, merges, mergeOf };
+  return { issues, byIndex, merges, mergeOf, cactusSorted: cactusSortedFlags(cells, size) };
 };
 
 export const pumpkinYield = (n) => (n >= 6 ? n * n * 6 : n * n * n);
