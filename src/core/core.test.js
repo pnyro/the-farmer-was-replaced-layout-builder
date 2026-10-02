@@ -242,16 +242,29 @@ describe("import / export", () => {
 });
 
 describe("game script export", () => {
-  it("is a self-contained script that only names entities the layout uses", async () => {
-    const { exportScript } = await import("./io.js");
+  it("is a sectioned script that only names entities the layout uses", async () => {
+    const { exportScript, scriptRoutes } = await import("./io.js");
     const cells = [C("Soil", "Pumpkin"), C("Grassland", "Tree"), C("Grassland", "Hedge"), ...new Array(6).fill(EMPTY_CELL)];
     const py = exportScript({ size: 3, cells });
+    for (const section of ["Layout", "Movement", "Farming", "Run"]) expect(py).toContain(`# ==== ${section} ====`);
     expect(py).toContain("PLANTABLE = [Entities.Tree, Entities.Pumpkin]");
     expect(py).not.toContain("Entities.Cactus");
-    expect(py).toMatch(/\n\tvisit\(True\)\n/);
-    expect(py.match(/Farm layout 3x3/g)).toHaveLength(1);
+    expect(py).toContain("USE_FERTILIZER = False");
+    expect(exportScript({ size: 3, cells }, { fertilize: true })).toContain("USE_FERTILIZER = True");
     expect(py).not.toMatch(/^ +\S/m); // tabs only
+    expect(py.match(/Farm layout 3x3/g)).toHaveLength(1);
     expect(parseLayout(py).cells).toEqual(cells);
-    expect(exportScript({ size: 3, cells }, { water: false })).not.toContain("use_item");
+    // Empty grassland is skipped; only the pumpkin is tended.
+    const routes = scriptRoutes({ size: 3, cells });
+    expect([...routes.plant].sort()).toEqual([0, 1, 2]);
+    expect(routes.tend).toEqual([0]);
+    expect(py).toContain("plant_order = [\n\t0, 1, 2\n]");
+  });
+
+  it("keeps the Movement section free of layout names", async () => {
+    const { exportScript } = await import("./io.js");
+    const py = exportScript({ size: 3, cells: new Array(9).fill(EMPTY_CELL) });
+    const movement = py.slice(py.indexOf("# ==== Movement ===="), py.indexOf("# ==== Farming ===="));
+    expect(movement).not.toMatch(/grid|PLANTABLE|tile\[/);
   });
 });

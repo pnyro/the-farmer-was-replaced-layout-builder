@@ -70,7 +70,8 @@ export const gameFarm = {
     drag([18, 10], [30, 10]),
     note(""),
     wait(400),
-    { op: "orbit", degrees: 200, ms: 6000 },
+    // Finish facing north, like the game's camera.
+    { op: "orbit", degrees: 346, ms: 8000 },
     wait(600),
   ],
 };

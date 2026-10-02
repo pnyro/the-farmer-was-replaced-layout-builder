@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { exportJson, exportPython, exportScript, parseLayout } from "../core/io.js";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { exportJson, exportPython, exportScript, parseLayout, scriptRoutes } from "../core/io.js";
 import { SHORTCUT_GROUPS } from "../core/shortcuts.js";
 import { useEditor } from "../core/useEditor.js";
 import Icon from "./UiIcons.jsx";
@@ -49,8 +49,14 @@ export function ExportDialog({ onClose }) {
   const editor = useEditor();
   const [format, setFormat] = useState("script");
   const [copied, setCopied] = useState(false);
+  const [fertilize, setFertilize] = useState(false);
   const { size, cells } = editor.getState();
-  const exporters = { script: exportScript, python: exportPython, json: exportJson };
+  const routes = useMemo(() => scriptRoutes({ size, cells }), [size, cells]);
+  const exporters = {
+    script: (layout) => exportScript(layout, { fertilize, routes }),
+    python: exportPython,
+    json: exportJson,
+  };
   const text = exporters[format]({ size, cells });
   const copy = async () => {
     try {
@@ -77,12 +83,18 @@ export function ExportDialog({ onClose }) {
       <p className="muted">
         {
           {
-            script: "One script for the game: paste it into a new code window and run it. The drone plants the layout from the south-west corner.",
+            script: `One script for the game: paste it into a new code window and run it. The drone plants ${routes.plant.length} tiles in ${routes.moves} moves (a sweep of the whole farm takes ${routes.sweepMoves}), then tends the pumpkins until they're grown.`,
             python: "Just the grid, for your own drone scripts. grid[y * grid_size + x] is the tile at (x, y), (0, 0) is the south-west corner.",
             json: "Lossless editor format. Import it back here or process it with your own tools.",
           }[format]
         }
       </p>
+      {format === "script" && routes.tend.length > 0 && (
+        <label className="toggle">
+          <input type="checkbox" checked={fertilize} onChange={(e) => setFertilize(e.target.checked)} />
+          <span>Fertilize pumpkins so giants grow faster (uses Fertilizer)</span>
+        </label>
+      )}
       <pre className="code-window" tabIndex={0}>
         <code>{text}</code>
       </pre>

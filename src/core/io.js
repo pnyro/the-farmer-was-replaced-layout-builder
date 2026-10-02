@@ -2,6 +2,7 @@
 
 import { ENTITIES, ENTITY_BY_NAME, GROUNDS, PARAMS, isEntity, isGround } from "./entities.js";
 import { cellParam, clampSize, createCells, makeCell } from "./grid.js";
+import { planRoute, routeLength } from "./route.js";
 
 const PY_PARAM_TO_KEY = Object.fromEntries(Object.values(PARAMS).map((p) => [p.py, p.key]));
 
@@ -32,13 +33,15 @@ export const exportPython = ({ size, cells }, { name = "grid" } = {}) => {
   return lines.join("\n") + "\n";
 };
 
-// The drone code appended by exportScript(). Written for the game's Python dialect: tabs, no
-// abs() (needs the Utilities unlock), and only names the layout actually uses, so a save that
-// hasn't unlocked e.g. cacti can still run a layout without them.
-const SCRIPT_BODY = `
-# ---- Drone code: no need to edit below this line ----
+// The game script (exportScript): one paste-ready script in sections that also work on their own.
+// Written for the game's Python dialect: tabs, no abs() (needs the Utilities unlock), and it only
+// names entities the layout uses, so a save without e.g. cacti can still run it.
 
-# Signed number of moves from current to target on an axis that wraps around.
+const MOVEMENT = `# ==== Movement ====
+# Only uses the game's built-ins. Takes the shortest way to a tile, including around the
+# farm's wrapping edges.
+
+# Signed number of moves from current to target on an axis of the given size.
 def steps(current, target, size):
 	diff = target - current
 	if diff > size // 2:
@@ -64,55 +67,120 @@ def move_to(x, y):
 		move(South)
 		dy = dy + 1
 
-def do_tile(tile):
+# Index in a row-by-row list (south row first) with rows of row_size tiles.
+def move_to_index(index, row_size):
+	move_to(index % row_size, index // row_size)
+`;
+
+const farming = ({ plantable, fertilize }) => `# ==== Farming ====
+# Works on the tile under the drone. A tile is {"ground": ..., "entity": ...} like in grid.
+
+USE_WATER = True
+# Fertilizer grows the plant under the drone by 2s per use. Speeds up giant pumpkins.
+USE_FERTILIZER = ${fertilize ? "True" : "False"}
+
+# The entities in this layout the drone can plant (the game spawns the others).
+PLANTABLE = [${plantable.map((e) => `Entities.${e}`).join(", ")}]
+
+# Makes the tile match: clears what's there, tills if needed, plants.
+def plant_tile(tile):
 	entity = tile["entity"]
-	if can_harvest():
-		harvest()
-	elif get_entity_type() != None and get_entity_type() != entity:
+	if get_ground_type() == tile["ground"] and get_entity_type() == entity:
+		return
+	if get_entity_type() != None:
 		harvest()
 	if get_ground_type() != tile["ground"]:
 		till()
-	if entity in PLANTABLE and get_entity_type() != entity:
-WATER_LINES		plant(entity)
+	if entity in PLANTABLE:
+		if USE_WATER and get_water() < 0.5 and num_items(Items.Water) > 0:
+			use_item(Items.Water)
+		plant(entity)
 
-# Visits every tile row by row from the south-west corner, snaking so the drone never
-# doubles back. The first pass plants everything; later passes only fix tiles that differ
-# from the layout (dead pumpkins, missing plants), so grown crops are left for you.
-def visit(first):
-	for y in range(grid_size):
-		for i in range(grid_size):
-			x = i
-			if y % 2 == 1:
-				x = grid_size - 1 - i
-			tile = grid[y * grid_size + x]
-			move_to(x, y)
-			if first or (tile["entity"] != None and get_entity_type() != tile["entity"]):
-				do_tile(tile)
+# Pumpkins can die while growing, and only full squares of grown pumpkins merge into giants.
+# Replants or fertilizes; returns True while the tile still needs another visit.
+def tend_tile(tile):
+	if get_entity_type() != tile["entity"]:
+		plant_tile(tile)
+		return True
+	if can_harvest():
+		return False
+	if USE_FERTILIZER and num_items(Items.Fertilizer) > 0:
+		use_item(Items.Fertilizer)
+	return True
+`;
+
+const RUN = `# ==== Run ====
+def plant_layout():
+	for index in plant_order:
+		move_to_index(index, grid_size)
+		plant_tile(grid[index])
+
+# Keeps going round the pumpkins until all of them are grown.
+def tend_pumpkins():
+	busy = True
+	while busy:
+		busy = False
+		for index in tend_order:
+			move_to_index(index, grid_size)
+			if tend_tile(grid[index]):
+				busy = True
 
 if grid_size > get_world_size():
 	print("The layout is", grid_size, "wide but the farm is", get_world_size())
 else:
-	visit(True)
-	# Keep tending until you stop the script: replants dead pumpkins so giants can form.
-	while True:
-		visit(False)
+	plant_layout()
+	print("Layout planted")
+	if len(tend_order) > 0:
+		tend_pumpkins()
+		print("Pumpkins grown")
 `;
 
+const pyList = (name, values, perLine = 32) => {
+  if (!values.length) return `${name} = []`;
+  const rows = [];
+  for (let i = 0; i < values.length; i += perLine) rows.push(`\t${values.slice(i, i + perLine).join(", ")}`);
+  return `${name} = [\n${rows.join(",\n")}\n]`;
+};
+
 /**
- * One self-contained script for the game: the layout plus the drone code that plants and then
- * tends it. Paste it into a single code window and run it. `water` waters tiles before planting.
+ * The drone's routes for a layout: every tile that isn't empty grassland (plant), then the
+ * pumpkins (tend), each ordered for few moves. `moves` is the planting route's length.
  */
-export const exportScript = ({ size, cells }, { water = true } = {}) => {
-  const used = ENTITIES.filter((e) => e.category === "plant" && cells.some((c) => c.entity === e.name));
-  const header = [
-    "# Paste this whole script into one code window and run it. The drone plants the",
-    "# layout starting in the south-west corner, then keeps it tended until you stop it.",
+export const scriptRoutes = ({ size, cells }) => {
+  const work = [];
+  const pumpkins = [];
+  cells.forEach((c, i) => {
+    if (c.ground !== "Grassland" || c.entity) work.push(i);
+    if (c.entity === "Pumpkin") pumpkins.push(i);
+  });
+  const plant = planRoute(work, size);
+  const tend = planRoute(pumpkins, size, { start: plant.length ? plant[plant.length - 1] : 0 });
+  return { plant, tend, moves: routeLength(plant, size), sweepMoves: size * size - 1 };
+};
+
+/**
+ * One self-contained script for the game: the layout, the routes, and the drone code to plant it
+ * and then tend the pumpkins until they're grown. `fertilize` sets USE_FERTILIZER.
+ */
+export const exportScript = (layout, { fertilize = false, routes = scriptRoutes(layout) } = {}) => {
+  const { size, cells } = layout;
+  const plantable = ENTITIES.filter((e) => e.category === "plant" && cells.some((c) => c.entity === e.name)).map((e) => e.name);
+  const grid = exportPython(layout).split("\n").slice(1).join("\n"); // without its title line
+  return [
+    `# Farm layout ${size}x${size}, made with the TFWR Layout Builder.`,
+    "# Paste the whole script into one code window and run it. Each section also works when",
+    "# copied on its own: Layout is just data, Movement only uses the game's built-ins.",
+    "",
+    "# ==== Layout ====",
+    grid.trimEnd(),
+    "# Tiles to plant and pumpkins to tend, in an order planned for few drone moves.",
+    pyList("plant_order", routes.plant),
+    pyList("tend_order", routes.tend),
+    "",
+    MOVEMENT,
+    farming({ plantable, fertilize }),
+    RUN,
   ].join("\n");
-  const plantable = `\n# Entities in this layout the drone can plant (the game spawns the others).\nPLANTABLE = [${used
-    .map((e) => `Entities.${e.name}`)
-    .join(", ")}]\n`;
-  const waterLines = water ? "\t\tif get_water() < 0.5 and num_items(Items.Water) > 0:\n\t\t\tuse_item(Items.Water)\n" : "";
-  return exportPython({ size, cells }).replace("\n", `\n${header}\n`) + plantable + SCRIPT_BODY.replace("WATER_LINES", waterLines);
 };
 
 /**

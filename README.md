@@ -31,134 +31,41 @@ paste-ready Python that your drone scripts can read.
   cacti that aren't in sorted order (shown brown, like in the game).
 - **Any size from 3×3 to 32×32**, with presets for the farm expansion sizes. Resizing keeps
   everything anchored at the south-west corner.
-- **Export / import** as Python (for the game) or JSON, with a paste box. Layouts autosave to
-  `localStorage`, and the link button copies a compact share URL (`#layout=…`).
+- **Export / import** as one paste-ready game script (with a drone route planned for few moves),
+  a plain Python grid, or JSON, with a paste box. Layouts autosave to `localStorage`, and the link
+  button copies a compact share URL (`#layout=…`).
 
 Coordinates match the game: `(0, 0)` is the south-west corner, `x` grows East, `y` grows North,
 and the tile at `(x, y)` is `grid[y * size + x]`.
 
 ## Using the export in the game
 
-**Export → Python (game)** produces a file like this (one tile per line, south row first):
+**Export → Game script** gives you one script to paste into a new code window in the game. Run it
+and the drone plants the layout, then keeps going round the pumpkins (replanting dead ones) until
+they're all grown, so full squares merge into giant pumpkins.
+
+The script is split into sections that also work when copied on their own:
 
 ```python
-# Farm layout 3x3, made with the TFWR Layout Builder.
-# grid[y * grid_size + x] is the tile at (x, y); (0, 0) is the south-west corner.
-# Rows go south to north, 3 tiles per row.
-grid_size = 3
-grid = [
-	{"ground": Grounds.Soil, "entity": Entities.Carrot},
-	{"ground": Grounds.Soil, "entity": Entities.Cactus, "size": 4},
-	{"ground": Grounds.Soil, "entity": Entities.Sunflower, "petals": 12},
-	{"ground": Grounds.Grassland, "entity": Entities.Tree},
-	{"ground": Grounds.Grassland, "entity": None},
-	...
-]
+# ==== Layout ====     grid_size, grid, plant_order, tend_order   (just data)
+# ==== Movement ====   steps(), move_to(x, y), move_to_index()    (only the game's built-ins)
+# ==== Farming ====    plant_tile(), tend_tile(), USE_WATER, USE_FERTILIZER
+# ==== Run ====        plant_layout(), tend_pumpkins() and the lines that start them
 ```
 
-`"size"` (cactus) and `"petals"` (sunflower) only appear for those entities. The game decides them
-randomly when a plant grows, so treat them as targets you can compare with `measure()`.
+- `grid[y * grid_size + x]` is the tile at (x, y); (0, 0) is the south-west corner, rows go south
+  to north. Each tile is `{"ground": Grounds.Soil, "entity": Entities.Carrot}`, plus `"size"`
+  (cactus) or `"petals"` (sunflower) where they apply. The game decides those randomly, so treat
+  them as targets you can compare with `measure()`.
+- `plant_order` lists the tiles that aren't empty grassland and `tend_order` the pumpkins, each
+  in an order the editor planned for few drone moves. `move_to()` takes the shortest way to a
+  tile, including around the farm's wrapping edges. The Export dialog shows the route length.
+- Tick **Fertilize pumpkins** in the Export dialog (or set `USE_FERTILIZER = True`) to grow them
+  faster with fertilizer.
+- The script only names the entities your layout uses, so it runs on a save that hasn't unlocked
+  the others. If the farm is smaller than the layout it prints a message and stops.
 
-Paste it into a code window named `layout`, add the three modules below, and run:
-
-```python
-import layout
-import mod_farm
-
-mod_farm.do_farm(layout.grid, layout.grid_size)
-```
-
-### Drone scripts
-
-```python
-# mod_globals
-
-def index_to_coords(index):
-	size = get_world_size()
-	return (index % size, index // size)
-
-def coords_to_index(x, y):
-	return y * get_world_size() + x
-```
-
-```python
-# mod_move
-
-import mod_globals
-
-# Signed number of steps from `current` to `target` on an axis that wraps around.
-def wrap_steps(current, target, size):
-	diff = target - current
-	if diff > size // 2:
-		diff = diff - size
-	elif diff < -(size // 2):
-		diff = diff + size
-	return diff
-
-def move_to_pos(x, y):
-	size = get_world_size()
-	dx = wrap_steps(get_pos_x(), x, size)
-	dy = wrap_steps(get_pos_y(), y, size)
-	for i in range(abs(dx)):
-		if dx > 0:
-			move(East)
-		else:
-			move(West)
-	for i in range(abs(dy)):
-		if dy > 0:
-			move(North)
-		else:
-			move(South)
-
-def move_to_index(index):
-	x, y = mod_globals.index_to_coords(index)
-	move_to_pos(x, y)
-```
-
-```python
-# mod_farm
-
-import mod_move
-
-# Entities the drone can plant. Apples, dinosaurs, hedges, treasure and dead
-# pumpkins are spawned by the game, so they are skipped.
-PLANTABLE = {Entities.Grass, Entities.Bush, Entities.Tree, Entities.Carrot, Entities.Pumpkin, Entities.Cactus, Entities.Sunflower}
-
-def do_tile(tile):
-	ground = tile["ground"]
-	entity = tile["entity"]
-	current = get_entity_type()
-
-	if can_harvest():
-		harvest()
-		current = get_entity_type()
-	elif current != None and current != entity:
-		harvest()  # clear the wrong plant
-		current = get_entity_type()
-
-	# till() toggles between grassland and soil
-	if get_ground_type() != ground:
-		till()
-
-	if entity in PLANTABLE and get_entity_type() != entity:
-		if get_water() < 0.5 and num_items(Items.Water) > 0:
-			use_item(Items.Water)
-		plant(entity)
-
-# Visits every tile in grid order (south row first, west to east) once.
-def do_farm(grid, grid_size):
-	if grid_size != get_world_size():
-		print("Layout is", grid_size, "but the farm is", get_world_size())
-		return False
-	for index in range(len(grid)):
-		mod_move.move_to_index(index)
-		do_tile(grid[index])
-	return True
-```
-
-To farm continuously, call `mod_farm.do_farm(layout.grid, layout.grid_size)` inside a
-`while True:` loop. You can also call `set_world_size(layout.grid_size)` first to shrink the farm to
-the layout size (it clears the farm).
+**Export → Grid only** is just the Layout part (`grid_size` and `grid`) for your own scripts.
 
 The JSON export (`{"format": "tfwr-layout", "version": 1, "size": n, "cells": [...]}`) is the
 editor's lossless format; cells use the same order. The import box accepts either format, plus the
@@ -186,7 +93,8 @@ Layout of the code:
 | `src/core/grid.js`, `tools.js` | Cell model, brushes, line/rect/flood-fill geometry |
 | `src/core/editor.js` | Editor store: document, undo/redo, tools, pointer interaction |
 | `src/core/validation.js` | Wrong-ground, adjacent-tree, cactus-sort and giant-pumpkin analysis |
-| `src/core/io.js` | Python/JSON export and import, URL encoding |
+| `src/core/io.js` | Game script, Python and JSON export/import, URL encoding |
+| `src/core/route.js` | Drone route planning (fewest moves on the wrapping farm) |
 | `src/core/routine.js`, `src/routines/` | Routines: scripted editor sessions played back by the drone (used for the demo video) |
 | `src/render2d/` | 2D canvas renderer (tile art, sprites, overlays, zoom/pan) |
 | `src/render3d/` | 3D renderer (react-three-fiber), procedural models, palette |

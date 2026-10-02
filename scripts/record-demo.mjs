@@ -34,6 +34,7 @@ const { values: args } = parseArgs({
     gif: { type: "boolean", default: true },
     "end-card": { type: "string", default: "2500" },
     export: { type: "boolean", default: false }, // end by opening Export and copying the game script
+    fertilize: { type: "boolean", default: false }, // with --export: tick "Fertilize pumpkins" first
   },
 });
 
@@ -238,7 +239,16 @@ try {
     await press("Export");
     await writeFrames(8);
     await moveTo(await centerOf("Game script"), 16);
-    await writeFrames(36);
+    await writeFrames(30);
+    if (args.fertilize) {
+      const box = await page.evaluate(() => {
+        const r = [...document.querySelectorAll(".modal input[type=checkbox]")][0].getBoundingClientRect();
+        return [r.left + r.width / 2, r.top + r.height / 2];
+      });
+      await moveTo(box, 18);
+      await page.evaluate(() => document.querySelector(".modal input[type=checkbox]").click());
+      await writeFrames(20);
+    }
     await moveTo(await centerOf("Copy"));
     // The dialog resets "Copied" after 1.6 s of real time, which is a blink at capture speed:
     // keep the confirmation up for the rest of the recording.
