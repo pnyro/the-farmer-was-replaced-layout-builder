@@ -4,6 +4,10 @@ A web editor for planning farm layouts in [The Farmer Was Replaced](https://stor
 Paint grounds and plants on a grid, check the layout against the game's rules, and export it as
 paste-ready Python that your drone scripts can read.
 
+[![Farm tour: a 32×32 farm built with every tool, then shown in 3D](./public/demo.gif)](./public/demo.mp4)
+
+*The drone builds a 32×32 farm with every tool, then the camera circles it in 3D ([full video](./public/demo.mp4)).*
+
 ![3D view](./public/screenshot.png)
 ![2D view](./public/screenshot-2d.png)
 
@@ -170,6 +174,7 @@ pnpm lint
 pnpm build        # static build in dist/
 pnpm icons        # re-render src/assets/icons + sprites from the 3D models (needs Chrome)
 pnpm screenshot   # re-capture public/screenshot*.png (needs Chrome)
+pnpm record       # re-record public/demo.mp4 + demo.gif from the farm-tour routine (needs Chrome, ffmpeg)
 ```
 
 Layout of the code:
@@ -181,6 +186,7 @@ Layout of the code:
 | `src/core/editor.js` | Editor store: document, undo/redo, tools, pointer interaction |
 | `src/core/validation.js` | Wrong-ground, adjacent-tree, cactus-sort and giant-pumpkin analysis |
 | `src/core/io.js` | Python/JSON export and import, URL encoding |
+| `src/core/routine.js`, `src/routines/` | Routines: scripted editor sessions played back by the drone (used for the demo video) |
 | `src/render2d/` | 2D canvas renderer (tile art, sprites, overlays, zoom/pan) |
 | `src/render3d/` | 3D renderer (react-three-fiber), procedural models, palette |
 | `scripts/` | Icon/sprite renderer, screenshot and demo layout scripts |

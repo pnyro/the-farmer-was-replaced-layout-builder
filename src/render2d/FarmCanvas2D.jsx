@@ -261,8 +261,22 @@ export default function FarmCanvas2D({ apiRef }) {
         ctx.fillText("N ↑", X(n / 2), Y(n) - s * 0.35);
       }
 
-      // The drone waits at (0,0), where the drone scripts start.
-      drawSprite("Drone", X(0.02), Y(0.02) - s * 0.08, Math.min(0.5, 26 / s + 0.18), 0.95);
+      // The drone waits at (0,0), where the drone scripts start. While a routine plays it is the
+      // cursor: it hovers over the tile being painted, with a shadow to show which one.
+      const d = st.playback?.drone;
+      if (d) {
+        const cx = X(d[0] + 0.5);
+        const cy = Y(d[1] + 0.5);
+        ctx.fillStyle = "rgba(0,0,0,0.28)";
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, s * 0.5, s * 0.26, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // About 60px across at any zoom, so it reads as the cursor even on a 32×32 farm.
+        const k = Math.min(1.8, Math.max(0.7, 60 / (SPRITE_UNITS.w * s)));
+        drawSprite("Drone", cx, cy - s * 0.2 - k * s * 0.35, k);
+      } else {
+        drawSprite("Drone", X(0.02), Y(0.02) - s * 0.08, Math.min(0.5, 26 / s + 0.18), 0.95);
+      }
     };
 
     const badge = (text, x, y, bg, fg) => {

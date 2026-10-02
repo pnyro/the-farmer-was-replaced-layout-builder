@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "icons": "node scripts/render-icons.mjs",
-    "screenshot": "node scripts/screenshot.mjs"
+    "screenshot": "node scripts/screenshot.mjs",
+    "record": "node scripts/record-demo.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

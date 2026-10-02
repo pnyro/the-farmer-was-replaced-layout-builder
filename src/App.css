@@ -421,6 +421,24 @@
   pointer-events: none;
 }
 
+.playback-note {
+  position: absolute;
+  left: 50%;
+  top: 14px;
+  transform: translateX(-50%);
+  max-width: calc(100% - 140px);
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--olive);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 .status-hint strong {
   color: var(--text);
 }

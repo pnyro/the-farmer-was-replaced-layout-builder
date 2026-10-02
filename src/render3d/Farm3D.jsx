@@ -75,18 +75,34 @@ function Sun({ size }) {
   );
 }
 
+/** The drone waits at (0,0); while a routine plays it follows the playback cursor. */
 function Drone({ size }) {
+  const editor = useEditor();
   const group = useRef();
   const props = useRef([]);
   const mat = useMemo(() => createMaterial(), []);
   useEffect(() => () => mat.dispose(), [mat]);
   const [wx, , wz] = tileToWorld(0, 0, size);
-  useFrame(({ clock }) => {
+  useFrame(({ clock }, dt) => {
     const t = clock.elapsedTime;
-    if (group.current) {
-      group.current.position.y = 1.55 + Math.sin(t * 1.6) * 0.08;
-      group.current.rotation.z = Math.sin(t * 0.9) * 0.04;
-      group.current.rotation.x = Math.cos(t * 0.7) * 0.04;
+    const g = group.current;
+    if (g) {
+      const d = editor.getState().playback?.drone;
+      const [tx, , tz] = d ? tileToWorld(d[0], d[1], size) : [wx, 0, wz];
+      // Playback positions are already smooth; ease only to soften jumps (start, end, resize).
+      const k = 1 - Math.exp(-dt * (d ? 30 : 6));
+      const vx = (tx - g.position.x) * k;
+      const vz = (tz - g.position.z) * k;
+      g.position.x += vx;
+      g.position.z += vz;
+      // Bigger and higher while it is the cursor, so it stays visible over a large farm.
+      const big = d ? Math.max(1, size / 14) : 1;
+      g.scale.setScalar(THREE.MathUtils.lerp(g.scale.x, 0.95 * big, 1 - Math.exp(-dt * 6)));
+      g.position.y = 1.55 + (g.scale.x / 0.95 - 1) * 0.9 + Math.sin(t * 1.6) * 0.08;
+      // Bank into the direction of travel (velocity in tiles/s).
+      const bank = dt > 0 ? 0.02 / dt : 0;
+      g.rotation.z = Math.sin(t * 0.9) * 0.04 - THREE.MathUtils.clamp(vx * bank, -0.25, 0.25);
+      g.rotation.x = Math.cos(t * 0.7) * 0.04 + THREE.MathUtils.clamp(vz * bank, -0.25, 0.25);
     }
     props.current.forEach((p, k) => p && (p.rotation.y = t * 22 * (k % 2 ? 1 : -1)));
   });
@@ -249,6 +265,14 @@ function CameraRig({ size, apiRef, controls }) {
       zoomIn: () => dolly(0.8),
       zoomOut: () => dolly(1.25),
       fit: () => homeRef.current(),
+      /** Turn the camera around the orbit target (radians, counter-clockwise from above). */
+      orbit: (angle) => {
+        const c = controls.current;
+        if (!c) return;
+        const offset = camera.position.clone().sub(c.target).applyAxisAngle(THREE.Object3D.DEFAULT_UP, angle);
+        camera.position.copy(c.target).add(offset);
+        c.update();
+      },
     };
   }, [apiRef, camera, controls]);
   return null;

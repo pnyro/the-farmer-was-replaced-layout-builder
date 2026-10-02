@@ -6,6 +6,7 @@ import TopBar from "./components/TopBar.jsx";
 import Icon from "./components/UiIcons.jsx";
 import { createEditor } from "./core/editor.js";
 import { layoutFromHash, loadInitialState, scheduleSave, shareUrl } from "./core/persist.js";
+import { createPlayer } from "./core/routine.js";
 import { handleShortcut } from "./core/shortcuts.js";
 import { TOOL_BY_ID } from "./core/tools.js";
 import { EditorContext, useEditorState } from "./core/useEditor.js";
@@ -48,6 +49,17 @@ function StatusHint() {
   );
 }
 
+/** Caption a playing routine can show over the farm. */
+function PlaybackNote() {
+  const note = useEditorState((s) => s.playback?.note);
+  if (!note) return null;
+  return (
+    <div className="playback-note" role="status">
+      {note}
+    </div>
+  );
+}
+
 function Workspace({ viewApi }) {
   const view = useEditorState((s) => s.view);
   return (
@@ -60,6 +72,7 @@ function Workspace({ viewApi }) {
         <FarmCanvas2D apiRef={viewApi} />
       )}
       <ViewControls apiRef={viewApi} />
+      <PlaybackNote />
       <StatusHint />
     </main>
   );
@@ -72,7 +85,10 @@ export default function App() {
   const [toast, setToast] = useState(source === "link" ? "Loaded layout from link" : "");
 
   useEffect(() => {
-    if (import.meta.env.DEV) window.__editor = editor; // handy for debugging and screenshot scripts
+    if (!import.meta.env.DEV) return;
+    // Handy for debugging and for the screenshot/video scripts.
+    window.__editor = editor;
+    window.__createPlayer = (routine) => createPlayer(editor, routine, { view: () => viewApi.current });
   }, [editor]);
 
   // A layout opened from a link is now in the editor (and autosaved): drop the hash so a reload

@@ -47,6 +47,7 @@ export const initialState = (size = DEFAULT_SIZE) => {
     preview: null, // { cells, indices:Set } while a shape gesture is in progress
     hoverRegion: null, // Set of indices the active tool would touch on click (fill preview)
     stroke: null, // internal gesture bookkeeping
+    playback: null, // { running, drone:[x,y] (fractional tile), note } while a routine plays
   };
 };
 
@@ -159,6 +160,10 @@ export const createEditor = (init = initialState()) => {
     },
     setShowGrid(v) {
       set({ showGrid: v });
+    },
+    /** Routine playback state (see routine.js). `null` ends playback. */
+    setPlayback(patch) {
+      set({ playback: patch === null ? null : { ...state.playback, ...patch } });
     },
 
     // ------------------------------------------------------------ pointer interaction
