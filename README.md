@@ -4,9 +4,9 @@ A web editor for planning farm layouts in [The Farmer Was Replaced](https://stor
 Paint grounds and plants on a grid, check the layout against the game's rules, and export it as
 paste-ready Python that your drone scripts can read.
 
-[![Farm tour: a 32×32 farm built with every tool, then shown in 3D](./public/demo.gif)](./public/demo.mp4)
+![Farm tour: a 32×32 farm built with every tool, then shown in 3D](./public/demo.gif)
 
-*The drone builds a 32×32 farm with every tool, then the camera circles it in 3D ([full video](./public/demo.mp4)).*
+*A scripted routine: the drone builds a 32×32 farm with every tool, then the camera circles it in 3D.*
 
 ![3D view](./public/screenshot.png)
 ![2D view](./public/screenshot-2d.png)
@@ -174,7 +174,8 @@ pnpm lint
 pnpm build        # static build in dist/
 pnpm icons        # re-render src/assets/icons + sprites from the 3D models (needs Chrome)
 pnpm screenshot   # re-capture public/screenshot*.png (needs Chrome)
-pnpm record       # re-record public/demo.mp4 + demo.gif from the farm-tour routine (needs Chrome, ffmpeg)
+pnpm record       # record the farm-tour routine to public/demo.mp4 + demo.gif (needs Chrome, ffmpeg)
+node scripts/image-to-routine.mjs picture.png --preview shot.png   # routine that paints an image
 ```
 
 Layout of the code:

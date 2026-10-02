@@ -5,12 +5,13 @@
 //   pnpm record                                   # public/demo.mp4 + public/demo.gif (README loop)
 //   node scripts/record-demo.mjs --stills 5,20,40 # just a few PNGs (in --out) to check framing
 //   node scripts/record-demo.mjs --speed 1.5 --fps 30 --width 1920 --height 1080
+//   node scripts/record-demo.mjs --routine picture.routine.json --name picture  # e.g. from image-to-routine.mjs
 //
 // The page clock is virtualised: every captured frame advances performance.now() by exactly one
 // frame, so animations (drone, camera) stay in step with the routine. Needs Chrome and ffmpeg.
 
 import { spawn } from "node:child_process";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
@@ -19,6 +20,7 @@ import { createServer } from "vite";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const { values: args } = parseArgs({
+  allowNegative: true, // --no-gif
   options: {
     routine: { type: "string", default: "farmTour" },
     out: { type: "string", default: join(root, "public") },
@@ -79,10 +81,11 @@ try {
   await page.evaluate(() => document.fonts.ready);
 
   // Load the 3D view's code up front so switching views doesn't show a loading frame.
-  const duration = await page.evaluate(async (routineName) => {
+  // --routine is a JSON file, or the name of a routine exported by src/routines/farmTour.js.
+  const fromFile = args.routine.endsWith(".json") ? JSON.parse(readFileSync(args.routine, "utf8")) : null;
+  const duration = await page.evaluate(async (routineName, fromFile) => {
     await import("/src/render3d/Farm3D.jsx");
-    const routines = await import("/src/routines/farmTour.js");
-    const routine = routines[routineName];
+    const routine = fromFile ?? (await import("/src/routines/farmTour.js"))[routineName];
     if (!routine) throw new Error(`No routine "${routineName}" in src/routines/farmTour.js`);
     window.__editor.setView("2d");
     window.__editor.setShowGrid(true);
@@ -118,7 +121,7 @@ try {
     document.head.append(style);
     document.body.append(card);
     return window.__player.duration;
-  }, args.routine);
+  }, args.routine, fromFile);
 
   const routineFrames = Math.ceil(duration / speed / frameMs);
   const totalFrames = routineFrames + Math.ceil(endCardMs / frameMs);

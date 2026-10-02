@@ -39,6 +39,14 @@ describe("routines", () => {
     expect(state.playback).toMatchObject({ running: false, drone: [7, 7] });
   });
 
+  it("pace speeds up gestures but not waits", () => {
+    const steps = [{ op: "setup", size: 8 }, { op: "stroke", path: [[0, 0], [7, 7]] }, { op: "wait", ms: 1000 }];
+    const slow = compileRoutine({ steps }).duration;
+    const fast = compileRoutine({ steps, pace: 2 }).duration;
+    expect(fast - 1000).toBeCloseTo((slow - 1000) / 2);
+    expect(() => validateRoutine({ steps, pace: 0 })).toThrow(/pace/);
+  });
+
   it("gives the same result whatever the frame rate", () => {
     const a = play(farmTour, 16).state;
     const b = play(farmTour, 250).state;

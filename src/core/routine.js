@@ -3,7 +3,7 @@
 // same editor actions as real input, so a routine can't do anything a user couldn't, and it
 // renders identically in both views. The drone acts as the cursor while a routine plays.
 //
-//   { name, description?, steps: [
+//   { name, description?, pace?, steps: [
 //     { op: "setup", size },                  blank farm of this size (history reset)
 //     { op: "tool", tool },                   "pencil" | "line" | "rect" | "fill" | "picker"
 //     { op: "brush", brush, params? },        brush id ("entity:Pumpkin", "ground:Soil", "erase")
@@ -16,6 +16,8 @@
 //   ]}
 //
 // Coordinates are tiles [x, y] in drone order: (0,0) is the south-west corner.
+// `pace` (default 1) speeds up the gestures only; waits, view switches and camera moves keep
+// their timing. Generated routines with many strokes use it to stay watchable.
 
 import { MAX_SIZE, MIN_SIZE, PARAMS } from "./entities.js";
 import { isValidBrushId, isValidTool } from "./editor.js";
@@ -42,6 +44,7 @@ const isTile = (p) => Array.isArray(p) && p.length === 2 && p.every(Number.isInt
 /** Throws a descriptive error if the routine is malformed. Returns the routine. */
 export const validateRoutine = (routine) => {
   if (!routine || !Array.isArray(routine.steps)) throw new Error("Routine needs a steps array");
+  if (routine.pace !== undefined && !(Number.isFinite(routine.pace) && routine.pace > 0)) throw new Error("pace must be > 0");
   routine.steps.forEach((s, i) => {
     const fail = (msg) => {
       throw new Error(`Step ${i + 1} (${s?.op ?? "?"}): ${msg}`);
@@ -90,6 +93,7 @@ const along = (path, p) => {
  */
 export const compileRoutine = (routine) => {
   validateRoutine(routine);
+  const k = 1 / (routine.pace ?? 1);
   const clips = [];
   let t = 0;
   let drone = [0, 0];
@@ -118,10 +122,10 @@ export const compileRoutine = (routine) => {
         drone = [0, 0];
         break;
       case "tool":
-        instant(PACE.setting, ({ editor }) => editor.setTool(s.tool));
+        instant(PACE.setting * k, ({ editor }) => editor.setTool(s.tool));
         break;
       case "brush":
-        instant(PACE.setting, ({ editor }) => {
+        instant(PACE.setting * k, ({ editor }) => {
           editor.setBrush(s.brush);
           for (const [k, v] of Object.entries(s.params ?? {})) editor.setParam(k, v);
         });
@@ -131,33 +135,33 @@ export const compileRoutine = (routine) => {
         const path = s.path;
         const from = drone;
         const to = path[0];
-        const fly = Math.min(PACE.flyMax, Math.max(PACE.flyMin, dist(from, to) * PACE.flyPerTile));
+        const fly = k * Math.min(PACE.flyMax, Math.max(PACE.flyMin, dist(from, to) * PACE.flyPerTile));
         clip(fly, (p, ctx) => {
           const k = easeInOut(p);
           moveDrone(ctx, [from[0] + (to[0] - from[0]) * k, from[1] + (to[1] - from[1]) * k], mods);
         });
-        instant(PACE.press, ({ editor }) => editor.pointerDown(to, mods));
+        instant(PACE.press * k, ({ editor }) => editor.pointerDown(to, mods));
         if (path.length > 1) {
           const lens = path.slice(1).map((q, i) => dist(path[i], q));
           const len = lens.reduce((a, b) => a + b, 0);
           // Arc-length progress of each corner, so a coarse frame step still visits every corner.
           const corners = lens.slice(0, -1).map((_, i) => lens.slice(0, i + 1).reduce((a, b) => a + b, 0) / len);
           let last = 0;
-          clip(Math.max(PACE.dragMin, (len / PACE.drawSpeed) * 1000), (p, ctx) => {
+          clip(k * Math.max(PACE.dragMin, (len / PACE.drawSpeed) * 1000), (p, ctx) => {
             for (const c of corners) if (c > last && c < p) moveDrone(ctx, along(path, c), mods);
             moveDrone(ctx, along(path, p), mods);
             last = p;
           });
         }
-        instant(PACE.release, ({ editor }) => editor.pointerUp());
+        instant(PACE.release * k, ({ editor }) => editor.pointerUp());
         drone = path[path.length - 1];
         break;
       }
       case "undo":
-        instant(PACE.setting * 1.5, ({ editor }) => editor.undo());
+        instant(PACE.setting * 1.5 * k, ({ editor }) => editor.undo());
         break;
       case "redo":
-        instant(PACE.setting * 1.5, ({ editor }) => editor.redo());
+        instant(PACE.setting * 1.5 * k, ({ editor }) => editor.redo());
         break;
       case "view":
         instant(PACE.view, ({ editor }) => editor.setView(s.view));
