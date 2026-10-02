@@ -6,6 +6,7 @@
 //   node scripts/record-demo.mjs --stills 5,20,40 # just a few PNGs (in --out) to check framing
 //   node scripts/record-demo.mjs --speed 1.5 --fps 30 --width 1920 --height 1080
 //   node scripts/record-demo.mjs --routine picture.routine.json --name picture  # e.g. from image-to-routine.mjs
+//   node scripts/record-demo.mjs --routine gameFarm --export --end-card 0      # ends on Export → Copy
 //
 // The page clock is virtualised: every captured frame advances performance.now() by exactly one
 // frame, so animations (drone, camera) stay in step with the routine. Needs Chrome and ffmpeg.
@@ -32,6 +33,7 @@ const { values: args } = parseArgs({
     stills: { type: "string" },
     gif: { type: "boolean", default: true },
     "end-card": { type: "string", default: "2500" },
+    export: { type: "boolean", default: false }, // end by opening Export and copying the game script
   },
 });
 
@@ -85,8 +87,9 @@ try {
   const fromFile = args.routine.endsWith(".json") ? JSON.parse(readFileSync(args.routine, "utf8")) : null;
   const duration = await page.evaluate(async (routineName, fromFile) => {
     await import("/src/render3d/Farm3D.jsx");
-    const routine = fromFile ?? (await import("/src/routines/farmTour.js"))[routineName];
-    if (!routine) throw new Error(`No routine "${routineName}" in src/routines/farmTour.js`);
+    const routine =
+      fromFile ?? (await import("/src/routines/farmTour.js"))[routineName] ?? (await import("/src/routines/gameFarm.js"))[routineName];
+    if (!routine) throw new Error(`No routine "${routineName}" in src/routines/`);
     window.__editor.setView("2d");
     window.__editor.setShowGrid(true);
     window.__editor.setShowIssues(true);
@@ -185,6 +188,68 @@ try {
       const el = (Date.now() - started) / 1000;
       process.stdout.write(`\r  frame ${f}/${totalFrames} (${view}) · ${el.toFixed(0)}s elapsed`);
     }
+  }
+  if (encoder && args.export) {
+    // Outro: a pointer opens Export and copies the game script. Clicks go through the DOM, so
+    // it is the real dialog and the real clipboard write.
+    await page.browserContext().overridePermissions(`http://localhost:${port}`, ["clipboard-read", "clipboard-write", "clipboard-sanitized-write"]);
+    const writeFrames = async (n, each, ...extra) => {
+      for (let i = 0; i < n; i++) {
+        if (each) await page.evaluate(each, i / Math.max(1, n - 1), ...extra);
+        await settle();
+        const png = await capture();
+        if (!encoder.stdin.write(png)) await new Promise((r) => encoder.stdin.once("drain", r));
+      }
+    };
+    const centerOf = (label) =>
+      page.evaluate((label) => {
+        const el = [...document.querySelectorAll("button")].find((b) => b.textContent.trim() === label);
+        const r = el.getBoundingClientRect();
+        return [r.left + r.width / 2, r.top + r.height / 2];
+      }, label);
+    await page.evaluate(() => {
+      const c = document.createElement("div");
+      c.id = "__cursor";
+      c.innerHTML =
+        '<svg width="28" height="28" viewBox="0 0 24 24"><path d="M3 2l7 19 2.6-7.4L20 11z" fill="#fff" stroke="#111" stroke-width="1.6" stroke-linejoin="round"/></svg>';
+      Object.assign(c.style, { position: "fixed", left: "0", top: "0", zIndex: "200", pointerEvents: "none", transition: "none" });
+      document.body.append(c);
+    });
+    let at = [Number(args.width) * 0.55, Number(args.height) * 0.6];
+    const moveTo = async (target, frames = 22) => {
+      await writeFrames(
+        frames,
+        (p, from, to) => {
+          const k = p < 0.5 ? 2 * p * p : 1 - (-2 * p + 2) ** 2 / 2;
+          const x = from[0] + (to[0] - from[0]) * k;
+          const y = from[1] + (to[1] - from[1]) * k;
+          document.getElementById("__cursor").style.transform = `translate(${x - 4}px, ${y - 3}px)`;
+        },
+        at,
+        target,
+      );
+      at = target;
+    };
+    const press = (label) =>
+      page.evaluate((label) => [...document.querySelectorAll("button")].find((b) => b.textContent.trim() === label).click(), label);
+    await page.evaluate(() => window.__editor.setPlayback(null));
+    await writeFrames(10);
+    await moveTo(await centerOf("Export"));
+    await press("Export");
+    await writeFrames(8);
+    await moveTo(await centerOf("Game script"), 16);
+    await writeFrames(36);
+    await moveTo(await centerOf("Copy"));
+    // The dialog resets "Copied" after 1.6 s of real time, which is a blink at capture speed:
+    // keep the confirmation up for the rest of the recording.
+    await page.evaluate(() => {
+      const st = window.setTimeout;
+      window.setTimeout = (fn, ms, ...rest) => st(fn, ms === 1600 ? 1e9 : ms, ...rest);
+    });
+    await press("Copy");
+    await writeFrames(10);
+    await moveTo([at[0] + 70, at[1] + 60], 14);
+    await writeFrames(40);
   }
   if (encoder) {
     encoder.stdin.end();

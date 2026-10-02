@@ -240,3 +240,18 @@ describe("import / export", () => {
     expect(decodeLayout(encodeLayout(empty))).toEqual(empty);
   });
 });
+
+describe("game script export", () => {
+  it("is a self-contained script that only names entities the layout uses", async () => {
+    const { exportScript } = await import("./io.js");
+    const cells = [C("Soil", "Pumpkin"), C("Grassland", "Tree"), C("Grassland", "Hedge"), ...new Array(6).fill(EMPTY_CELL)];
+    const py = exportScript({ size: 3, cells });
+    expect(py).toContain("PLANTABLE = [Entities.Tree, Entities.Pumpkin]");
+    expect(py).not.toContain("Entities.Cactus");
+    expect(py).toMatch(/\n\tvisit\(True\)\n/);
+    expect(py.match(/Farm layout 3x3/g)).toHaveLength(1);
+    expect(py).not.toMatch(/^ +\S/m); // tabs only
+    expect(parseLayout(py).cells).toEqual(cells);
+    expect(exportScript({ size: 3, cells }, { water: false })).not.toContain("use_item");
+  });
+});

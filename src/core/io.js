@@ -32,6 +32,89 @@ export const exportPython = ({ size, cells }, { name = "grid" } = {}) => {
   return lines.join("\n") + "\n";
 };
 
+// The drone code appended by exportScript(). Written for the game's Python dialect: tabs, no
+// abs() (needs the Utilities unlock), and only names the layout actually uses, so a save that
+// hasn't unlocked e.g. cacti can still run a layout without them.
+const SCRIPT_BODY = `
+# ---- Drone code: no need to edit below this line ----
+
+# Signed number of moves from current to target on an axis that wraps around.
+def steps(current, target, size):
+	diff = target - current
+	if diff > size // 2:
+		diff = diff - size
+	elif diff < -(size // 2):
+		diff = diff + size
+	return diff
+
+def move_to(x, y):
+	size = get_world_size()
+	dx = steps(get_pos_x(), x, size)
+	dy = steps(get_pos_y(), y, size)
+	while dx > 0:
+		move(East)
+		dx = dx - 1
+	while dx < 0:
+		move(West)
+		dx = dx + 1
+	while dy > 0:
+		move(North)
+		dy = dy - 1
+	while dy < 0:
+		move(South)
+		dy = dy + 1
+
+def do_tile(tile):
+	entity = tile["entity"]
+	if can_harvest():
+		harvest()
+	elif get_entity_type() != None and get_entity_type() != entity:
+		harvest()
+	if get_ground_type() != tile["ground"]:
+		till()
+	if entity in PLANTABLE and get_entity_type() != entity:
+WATER_LINES		plant(entity)
+
+# Visits every tile row by row from the south-west corner, snaking so the drone never
+# doubles back. The first pass plants everything; later passes only fix tiles that differ
+# from the layout (dead pumpkins, missing plants), so grown crops are left for you.
+def visit(first):
+	for y in range(grid_size):
+		for i in range(grid_size):
+			x = i
+			if y % 2 == 1:
+				x = grid_size - 1 - i
+			tile = grid[y * grid_size + x]
+			move_to(x, y)
+			if first or (tile["entity"] != None and get_entity_type() != tile["entity"]):
+				do_tile(tile)
+
+if grid_size > get_world_size():
+	print("The layout is", grid_size, "wide but the farm is", get_world_size())
+else:
+	visit(True)
+	# Keep tending until you stop the script: replants dead pumpkins so giants can form.
+	while True:
+		visit(False)
+`;
+
+/**
+ * One self-contained script for the game: the layout plus the drone code that plants and then
+ * tends it. Paste it into a single code window and run it. `water` waters tiles before planting.
+ */
+export const exportScript = ({ size, cells }, { water = true } = {}) => {
+  const used = ENTITIES.filter((e) => e.category === "plant" && cells.some((c) => c.entity === e.name));
+  const header = [
+    "# Paste this whole script into one code window and run it. The drone plants the",
+    "# layout starting in the south-west corner, then keeps it tended until you stop it.",
+  ].join("\n");
+  const plantable = `\n# Entities in this layout the drone can plant (the game spawns the others).\nPLANTABLE = [${used
+    .map((e) => `Entities.${e.name}`)
+    .join(", ")}]\n`;
+  const waterLines = water ? "\t\tif get_water() < 0.5 and num_items(Items.Water) > 0:\n\t\t\tuse_item(Items.Water)\n" : "";
+  return exportPython({ size, cells }).replace("\n", `\n${header}\n`) + plantable + SCRIPT_BODY.replace("WATER_LINES", waterLines);
+};
+
 /**
  * Parse Python produced by exportPython (or hand-written in the same shape). Tolerant:
  * reads every {...} dict in order and an optional `<name>_size = N` / `size = N` line.

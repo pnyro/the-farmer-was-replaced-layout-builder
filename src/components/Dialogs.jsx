@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { exportJson, exportPython, parseLayout } from "../core/io.js";
+import { exportJson, exportPython, exportScript, parseLayout } from "../core/io.js";
 import { SHORTCUT_GROUPS } from "../core/shortcuts.js";
 import { useEditor } from "../core/useEditor.js";
 import Icon from "./UiIcons.jsx";
@@ -47,10 +47,11 @@ const download = (text, name, type) => {
 
 export function ExportDialog({ onClose }) {
   const editor = useEditor();
-  const [format, setFormat] = useState("python");
+  const [format, setFormat] = useState("script");
   const [copied, setCopied] = useState(false);
   const { size, cells } = editor.getState();
-  const text = format === "python" ? exportPython({ size, cells }) : exportJson({ size, cells });
+  const exporters = { script: exportScript, python: exportPython, json: exportJson };
+  const text = exporters[format]({ size, cells });
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(text);
@@ -64,7 +65,8 @@ export function ExportDialog({ onClose }) {
     <Modal title="Export layout" onClose={onClose} wide>
       <div className="segmented" role="tablist">
         {[
-          ["python", "Python (game)"],
+          ["script", "Game script"],
+          ["python", "Grid only"],
           ["json", "JSON"],
         ].map(([id, label]) => (
           <button key={id} type="button" role="tab" aria-selected={format === id} className={format === id ? "is-active" : ""} onClick={() => setFormat(id)}>
@@ -73,15 +75,19 @@ export function ExportDialog({ onClose }) {
         ))}
       </div>
       <p className="muted">
-        {format === "python"
-          ? "Paste into a code window in the game. grid[y * grid_size + x] is the tile at (x, y); the drone scripts in the README read exactly this."
-          : "Lossless editor format. Import it back here or process it with your own tools."}
+        {
+          {
+            script: "One script for the game: paste it into a new code window and run it. The drone plants the layout from the south-west corner.",
+            python: "Just the grid, for your own drone scripts. grid[y * grid_size + x] is the tile at (x, y), (0, 0) is the south-west corner.",
+            json: "Lossless editor format. Import it back here or process it with your own tools.",
+          }[format]
+        }
       </p>
       <pre className="code-window" tabIndex={0}>
         <code>{text}</code>
       </pre>
       <div className="modal-actions">
-        <button type="button" className="text-btn" onClick={() => download(text, format === "python" ? "layout.py" : "layout.json", "text/plain")}>
+        <button type="button" className="text-btn" onClick={() => download(text, format === "json" ? "layout.json" : "layout.py", "text/plain")}>
           <Icon name="download" size={18} />
           <span>Download</span>
         </button>
