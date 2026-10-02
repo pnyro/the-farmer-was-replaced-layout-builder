@@ -44,6 +44,8 @@ and the tile at `(x, y)` is `grid[y * size + x]`.
 and the drone plants the layout, then keeps going round the pumpkins (replanting dead ones) until
 they're all grown, so full squares merge into giant pumpkins.
 
+![The exported script running in the game: the drone plants the farm, then grows giant pumpkins](./public/game-build.gif)
+
 The script is split into sections that also work when copied on their own:
 
 ```python
